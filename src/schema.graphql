@@ -1,0 +1,41 @@
+type User {
+  userId: ID
+  firstname: String!
+  lastname: String!
+  email: String!
+  shoppingcart: Shoppingcart
+}
+
+type Shoppingcart {
+  cartId: ID!
+  products: [Product]
+  totalAmount: Int
+}
+
+type Product {
+  productId: ID!
+  Title: String!
+  Price: Int!
+}
+
+type DeletedResourceResponse {
+  deletedId: ID
+  success: Boolean
+}
+
+type Query {
+  getShoppingcartById(id: ID!): Shoppingcart
+}
+
+type Mutation {
+  createUser(input: createUserInput): User
+  #   createShoppingcart(cartId: ID!): Shoppingcart
+}
+
+###### inputs #####
+
+input createUserInput {
+  firstname: String!
+  lastname: String!
+  email: String!
+}
