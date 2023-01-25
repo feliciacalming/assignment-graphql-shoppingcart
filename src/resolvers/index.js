@@ -3,7 +3,6 @@ const crypto = require("node:crypto");
 const axios = require("axios").default;
 const fsPromises = require("fs/promises");
 const { GraphQLError } = require("graphql");
-const usersDirectory = path.join(__dirname, "..", "data", "users");
 const shoppingcartsDirectory = path.join(
   __dirname,
   "..",
@@ -15,71 +14,75 @@ const { fileExists } = require("../utils/fileHandling");
 
 exports.resolvers = {
   Mutation: {
-    createUser: async (_, args) => {
-      const { firstname, lastname, email } = args.input;
-      const userId = crypto.randomUUID();
-
-      //kolla om användaren redan finns
-
-      const users = await fsPromises.readdir(usersDirectory);
-      const userData = [];
-
-      console.log("test");
-
-      //vad gör man med DS_Store? den låg som en fil i users och ställde till det med felet Unexpected token \u0000 in JSON at position..
-      for (const file of users) {
-        const filePath = path.join(usersDirectory, file);
-        const fileContents = await fsPromises.readFile(filePath, {
-          encoding: "utf-8",
-        });
-        console.log(fileContents);
-        const data = JSON.parse(fileContents);
-        console.log(data);
-        userData.push(data);
-        console.log(userData);
-      }
-
-      //skapa ny unik användare + shoppingcart
-      const newUser = {
-        userId: userId,
-        firstname: firstname,
-        lastname: lastname,
-        email: email,
-      };
+    createShoppingcart: async (_, args) => {
+      const cartId = crypto.randomUUID();
 
       const newCart = {
-        cartId: userId,
+        cartId: cartId,
         products: [],
         totalAmount: 0,
       };
 
-      const filePath = path.join(usersDirectory, `${newUser.userId}.json`);
-      const cartFilePath = path.join(
+      const filePath = path.join(
         shoppingcartsDirectory,
-        `${newUser.userId}.json`
+        `${newCart.cartId}.json`
       );
 
-      //kolla om användaren redan finns
-      let userExists = false;
-
-      userData.forEach((item) => {
-        console.log(item.email);
-        if (item.email === email) {
-          userExists = true;
-        }
-      });
-
-      if (userExists)
-        return new GraphQLError(
-          "Det finns redan en användare med den här mailadressen!"
-        );
-
       //skapa en ny fil för den nya användaren i /data/users
-      await fsPromises.writeFile(filePath, JSON.stringify(newUser));
-      await fsPromises.writeFile(cartFilePath, JSON.stringify(newCart));
+      await fsPromises.writeFile(filePath, JSON.stringify(newCart));
 
       //skapa responsen
-      return newUser;
+      return newCart;
+    },
+
+    createProduct: async (_, args) => {
+      const { title, price } = args.input;
+      const id = crypto.randomUUID();
+
+      const newProduct = {
+        productId: id,
+        title: title,
+        price: price,
+      };
+
+      //skapa ny fil för nya produkten i data/products
+      const filePath = path.join(productsDirectory, `${newProduct.id}.json`);
+      await fsPromises.writeFile(filePath, JSON.stringify(newProduct));
+
+      return newProduct;
+    },
+
+    addProductToCart: async (_, args) => {
+      //varukorgsid, produktid, skicka in i varukorgens lista
+      //uppdatera varukorgens totalamount
+
+      const { cartId, productId } = args;
+      const productFilepath = path.join(productsDirectory, `${productId}.json`);
+
+      const fileContents = await fsPromises.readFile(productFilepath, {
+        encoding: "utf-8",
+      });
+      const productToCart = JSON.parse(fileContents);
+
+      //kolla att shoppingcarten finns
+      const filePath = path.join(shoppingcartsDirectory, `${cartId}.json`);
+      const shoppingcartExists = await fileExists(filePath);
+
+      if (!shoppingcartExists) {
+        return new GraphQLError("This shoppingcart doesn't exist!");
+      }
+
+      //lägg till produkten i varukorgens produktlista
+      const products = [];
+      products.push(productToCart);
+
+      const totalAmount = 50;
+
+      //uppdatera varukorgen
+      const updatedCart = { cartId, products, totalAmount };
+      await fsPromises.writeFile(filePath, JSON.stringify(updatedCart));
+
+      return updatedCart;
     },
   },
 };

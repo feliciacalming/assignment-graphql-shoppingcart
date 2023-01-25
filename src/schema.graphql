@@ -1,11 +1,3 @@
-type User {
-  userId: ID
-  firstname: String!
-  lastname: String!
-  email: String!
-  shoppingcart: Shoppingcart
-}
-
 type Shoppingcart {
   cartId: ID!
   products: [Product]
@@ -14,8 +6,8 @@ type Shoppingcart {
 
 type Product {
   productId: ID!
-  Title: String!
-  Price: Int!
+  title: String!
+  price: Int!
 }
 
 type DeletedResourceResponse {
@@ -24,18 +16,17 @@ type DeletedResourceResponse {
 }
 
 type Query {
-  getShoppingcartById(id: ID!): Shoppingcart
+  getShoppingcartById(cartId: ID!): Shoppingcart
 }
 
 type Mutation {
-  createUser(input: createUserInput): User
-  #   createShoppingcart(cartId: ID!): Shoppingcart
+  createShoppingcart(cartId: ID!): Shoppingcart
+  createProduct(input: createProductInput!): Product
+  addProductToCart(cartId: ID!, productId: ID!): Shoppingcart
 }
 
-###### inputs #####
-
-input createUserInput {
-  firstname: String!
-  lastname: String!
-  email: String!
+input createProductInput {
+  productId: ID!
+  title: String!
+  price: Int!
 }
