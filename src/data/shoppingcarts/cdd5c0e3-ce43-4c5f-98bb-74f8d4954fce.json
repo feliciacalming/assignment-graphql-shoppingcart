@@ -1,0 +1,21 @@
+{
+  "cartId": "cdd5c0e3-ce43-4c5f-98bb-74f8d4954fce",
+  "products": [
+    {
+      "productId": "a1a6cd45-41dd-4ca2-a25b-72c793b71ee0",
+      "title": "Corny Big Chocolate & Banana",
+      "price": 10
+    },
+    {
+      "productId": "2996a35d-27fe-48a5-a428-9e724375f55d",
+      "title": "Corny Big Salted Caramel",
+      "price": 10
+    },
+    {
+      "productId": "c2d853b4-93b0-4e5e-a94d-9a93c81c8d2d",
+      "title": "Corny Big Peanut Chocolate",
+      "price": 10
+    }
+  ],
+  "totalAmount": 30
+}

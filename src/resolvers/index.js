@@ -13,6 +13,46 @@ const productsDirectory = path.join(__dirname, "..", "data", "products");
 const { fileExists } = require("../utils/fileHandling");
 
 exports.resolvers = {
+  Query: {
+    getShoppingcartById: async (_, args) => {
+      const { cartId } = args;
+
+      const filePath = path.join(shoppingcartsDirectory, `${cartId}.json`);
+      const shoppingcartExists = await fileExists(filePath);
+
+      const shoppingcart = JSON.parse(
+        await fsPromises.readFile(filePath, {
+          encoding: "utf-8",
+        })
+      );
+
+      if (!shoppingcartExists) {
+        return new GraphQLError("This shoppingcart doesn't exist!");
+      }
+
+      return shoppingcart;
+    },
+
+    getProductById: async (_, args) => {
+      const { productId } = args;
+
+      const filePath = path.join(productsDirectory, `${productId}.json`);
+      const productExists = await fileExists(filePath);
+
+      if (!productExists) {
+        return new GraphQLError("This product doesn't exist!");
+      }
+
+      const product = JSON.parse(
+        await fsPromises.readFile(filePath, {
+          encoding: "utf-8",
+        })
+      );
+
+      return product;
+    },
+  },
+
   Mutation: {
     createShoppingcart: async (_, args) => {
       const cartId = crypto.randomUUID();
@@ -28,7 +68,7 @@ exports.resolvers = {
         `${newCart.cartId}.json`
       );
 
-      //skapa en ny fil för den nya användaren i /data/users
+      //skapa en ny fil för den nya shoppingcarten i /data/shoppingcart
       await fsPromises.writeFile(filePath, JSON.stringify(newCart));
 
       //skapa responsen
@@ -113,20 +153,31 @@ exports.resolvers = {
         return new GraphQLError("This shoppingcart doesn't exist!");
       }
 
-      //kolla om produkten faktiskt finns i varukorgen
-      const cartContents = await fsPromises.readFile(filePath, {
-        encoding: "utf-8",
-      });
-      let shoppingcart = JSON.parse(cartContents);
-      console.log(shoppingcart);
+      //kolla om produkten faktiskt finns i varukorgen *******FIXA!!!!!!******
+      const shoppingcart = JSON.parse(
+        await fsPromises.readFile(filePath, {
+          encoding: "utf-8",
+        })
+      );
 
       /**** ska lägga till så att totalAmount uppdateras när man tar bort också!! *****/
+      // let shoppingcartLength = shoppingcart.products.length;
+      let found = false;
+      // let totalAmount = shoppingcart.totalAmount;
+
       for (let i = 0; i < shoppingcart.products.length; i++) {
-        if (productId === shoppingcart.products[i].id) {
+        if (
+          productId === shoppingcart.products[i].productId &&
+          found === false
+        ) {
+          shoppingcart.totalAmount -= shoppingcart.products[i].price;
           shoppingcart.products.splice([i], 1);
-          /*varför tar den inte bort alla produkter med det id:t ens? det borde den ju göra med 
-          den här koden. även om jag ska lösa så att den bara tar bort EN. wtf?*/
+          found = true;
         }
+      }
+
+      if (!found) {
+        return new GraphQLError("This product is not in your shoppingcart!");
       }
 
       //uppdatera varukorgen med nya listan
@@ -138,6 +189,28 @@ exports.resolvers = {
       };
 
       return DeletedResourceResponse;
+    },
+
+    deleteShoppingcart: async (_, args) => {
+      const { cartId } = args;
+
+      const filePath = path.join(shoppingcartsDirectory, `${cartId}.json`);
+      const shoppingcartExists = await fileExists(filePath);
+
+      if (!shoppingcartExists) {
+        return new GraphQLError("This shoppingcart doesn't exist!");
+      }
+
+      //ta bort varukorgen
+      if (shoppingcartExists) {
+        await fsPromises.unlink(filePath);
+      }
+
+      //return
+      return {
+        deleteMessage: `Du tog bort varukorgen med id: ${cartId}`,
+        deletedId: cartId,
+      };
     },
   },
 };
